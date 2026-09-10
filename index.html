@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%23ffffff'/><path d='M18 42l16-16 6 6-16 16z' fill='%238B5CF6'/><path d='M36 22l8-8 10 10-8 8z' fill='%234F46E5'/></svg>">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyWebBox.pw — Мои HTML утилиты</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --accent-color: #4f46e5;
+            --accent-hover: #4338ca;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 2rem 1rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 3.2rem; /* Было 2.2rem — увеличивает заголовок "WebBox.su" */
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+			font-size: 1.2rem; /* увеличивает подзаголовок */
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 1.5rem;
+        }
+
+        .search-box {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent-color);
+        }
+
+        main {
+            max-width: 1100px;
+            width: 100%;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            flex-grow: 1;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header h2 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: #111827;
+        }
+
+        .card-header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .tag {
+            background: #eee;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            color: #555;
+        }
+
+        .btn {
+            display: inline-block;
+            text-align: center;
+            background-color: var(--accent-color);
+            color: #fff;
+            text-decoration: none;
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>MyWebBox.pw</h1>
+        <p>Личный каталог полезных HTML-инструментов и утилит для работы, творчества и повседневных задач.</p>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Поиск по программам..." onkeyup="filterTools()">
+        </div>
+    </header>
+
+    <main>
+        <div class="grid" id="toolsGrid">
+            
+            <!-- Карточка утилиты 1 -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Генератор паролей</h2>
+                    <p>Простая утилита для быстрого создания надежных паролей с настраиваемой длиной.</p>
+                    <div class="card-tags">
+                        <span class="tag">Безопасность</span>
+                        <span class="tag">Генератор</span>
+                    </div>
+                </div>
+                <!-- Укажите путь к вашему HTML файлу -->
+                <a href="tools/58B23D24165F38C1655BE55829729D11E04D4F107C5852AF0F93CC2827810550DD13038D6B96D353470419A193.html" class="btn" target="_blank">Открыть утилиту</a>
+            </div>
+
+            <!-- Карточка утилиты 2 -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Калькулятор процентов</h2>
+                    <p>Быстрый подсчет процентов, скидок и разницы между числами.</p>
+                    <div class="card-tags">
+                        <span class="tag">Расчеты</span>
+                        <span class="tag">Математика</span>
+                    </div>
+                </div>
+                <a href="tools/3486AB21355240812B3FE42D5FF6D81337EA6C800C36B70371A34601253F0D85A448B2FE3DD56C4F87CB4DE7B7.html" class="btn" target="_blank">Открыть утилиту</a>
+            </div>
+
+			<!-- Карточка утилиты 2 -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>SHA-256 Bit Hash</h2>
+                    <p>Преобразование в sha-256 бинарный</p>
+                    <div class="card-tags">
+                        <span class="tag">Преобразование</span>
+                        <span class="tag">Математика</span>
+                    </div>
+                </div>
+                <a href="tools/4A905C1D15351504160A178C2DC49345A12B01C21C2680AF01445C3B626A64E72502C12056A1CE78627C33802F.html" class="btn" target="_blank">Открыть утилиту</a>
+            </div>
+            <!-- Добавляйте новые карточки ниже по этому же шаблону -->
+
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; MyWebBox.pw — Персональная коллекция микроприложений</p>
+    </footer>
+
+    <script>
+        // Функция фильтрации карточек при поиске
+        function filterTools() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.card');
+
+            cards.forEach(card => {
+                const title = card.querySelector('h2').innerText.toLowerCase();
+                const desc = card.querySelector('p').innerText.toLowerCase();
+                
+                if (title.includes(input) || desc.includes(input)) {
+                    card.style.display = "";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+        }
+    </script>
+</body>
+</html>
