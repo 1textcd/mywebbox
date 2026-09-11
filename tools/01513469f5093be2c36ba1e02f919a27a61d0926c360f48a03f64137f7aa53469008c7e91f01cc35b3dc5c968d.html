@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEX в DEC</title>
+<style>
+body {
+    font-family: sans-serif; 
+    background: #f4f6f9; 
+    display: flex; 
+    flex-direction: column; /* Принудительно выстраивает элементы СВЕРХУ ВНИЗ */
+    align-items: center;    /* Выравнивает карточку и подвал РОВНО ПО ЦЕНТРУ */
+    justify-content: center; 
+    min-height: 100vh; 
+    margin: 0; 
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+
+input, textarea { 
+			width: 100%; 
+			padding: 12px; 
+			margin: 10px 0; 
+			border: 2px solid #ddd; 
+			border-radius: 8px; 
+			font-family: monospace; 
+			box-sizing: border-box; 
+			}
+
+button { 
+			width: 100%; 
+			padding: 12px; 
+			background: #4a90e2; 
+			color: white; 
+			border: none; 
+			border-radius: 8px; font-weight: 
+			bold; cursor: pointer; 
+			}
+
+
+.card { 
+    background: #fff; 
+    padding: 30px; 
+    border-radius: 12px; 
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1); 
+    width: 100%; 
+    max-width: 500px;
+    margin-bottom: 20px; /* Создает красивый отступ снизу до подвала */
+}
+
+/* Стили для вашего подключаемого подвала */
+#main-footer {
+    width: 100%;
+    max-width: 500px; /* Делает ширину подвала такой же, как у карточки .card */
+    box-sizing: border-box;
+}
+ 
+ 		@media (max-width: 480px) {
+			.card { padding: 15px; }
+			.options-grid { grid-template-columns: 1fr; 
+			}
+}
+
+</style>
+</head>
+<body>
+
+<div class="card">
+<h2>HEX в Десятичное число</h2>
+<label>HEX значение:</label>
+<input type="text" id="h" placeholder="Например: 1A3F" oninput="convert()">
+<label>Десятичное значение:</label>
+<textarea id="d" readonly rows="3"></textarea>
+<button onclick="copyVal()">Копировать</button>
+
+
+
+</div>
+
+<script>
+    function convert() {
+        let val = document.getElementById('h').value.trim();
+        if(!val) { document.getElementById('d').value = ''; return; }
+        if(val.startsWith('0x') || val.startsWith('0X')) val = val.substring(2);
+        if(val.startsWith('#')) val = val.substring(1);
+        try {
+            document.getElementById('d').value = BigInt('0x' + val).toString(10);
+        } catch(e) {
+            document.getElementById('d').value = 'Ошибка ввода';
+        }
+    }
+    function copyVal() {
+        navigator.clipboard.writeText(document.getElementById('d').value);
+        alert('Скопировано!');
+    }
+</script>
+
+<div id="main-footer" class="width: 100%;"></div>
+<script src="footer.js"></script>
+
+</body>
+</html>
+
+
+
+
+
+
