@@ -1,0 +1,11 @@
+Options +FollowSymLinks
+AddDefaultCharset UTF-8
+RewriteEngine on
+RewriteCond %{HTTP_HOST} ^mywebbox.pw
+RewriteRule (.*) http://www.mywebbox.pw/$1 [R=301,L]
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /index\.php\ HTTP/
+RewriteRule ^index\.html$ http://www.mywebbox.pw [R=301,L]
+########
+#переадресация при ошибке
+ErrorDocument 404 http://www.mywebbox.pw/
+########
