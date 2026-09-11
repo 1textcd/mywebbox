@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SHA-256 от битовой строки</title>
+  <style>
+    body{font-family:Inter,Segoe UI,Arial,system-ui;max-width:900px;margin:28px auto;padding:16px;color:#111}
+    textarea{width:100%;height:140px;font-family:monospace;font-size:14px;padding:10px;box-sizing:border-box}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    label{font-size:14px}
+    button{padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#f6f6f6;cursor:pointer}
+    pre{background:#f3f3f3;padding:12px;border-radius:8px;overflow:auto}
+    .ok{color:green}
+    .err{color:#b00020}
+    small{color:#555}
+    .outputs{display:grid;gap:8px}
+    .controls{display:flex;gap:8px;align-items:center}
+  </style>
+</head>
+<body>
+  <h1>SHA-256 от битовой строки (бит → байты → digest)</h1>
+  <p>Вставь строку из символов <code>0</code> и <code>1</code>. Длина может быть любой (хотя обычно имеет смысл ≥1). По умолчанию биты упаковываются по 8 в байт (старший бит — первый). Если длина не кратна 8, можно автоматически дополнить последний байт нулями — включи «Дополнить нулями».</p>
+
+  <textarea id="bits" placeholder="Введите битовую строку, например: 11010000..." spellcheck="false"></textarea>
+
+  <div class="row" style="margin-top:8px;margin-bottom:12px">
+    <label><input type="checkbox" id="padZeros" checked> Дополнить нулями до полного байта (если нужно)</label>
+    <div class="controls">
+      <button id="calc">Посчитать SHA-256</button>
+      <button id="clear">Очистить</button>
+    </div>
+  </div>
+
+  <div id="status"></div>
+
+  <h3>Результат</h3>
+  <div class="outputs">
+    <div>
+      <div><small>SHA-256 (hex):</small></div>
+      <pre id="hexOut">—</pre>
+      <button id="copyHex">Скопировать hex</button>
+    </div>
+
+    <div>
+      <div style="margin-top:8px"><small>SHA-256 (binary, 256 bits):</small></div>
+      <pre id="binOut">—</pre>
+      <button id="copyBin">Скопировать binary</button>
+    </div>
+
+    <div>
+      <div style="margin-top:8px"><small>Вход (после упаковки в байты, в hex):</small></div>
+      <pre id="packedHex">—</pre>
+      <button id="copyPacked">Скопировать входной hex</button>
+    </div>
+  </div>
+
+  <script>
+    // Утилиты
+    function showStatus(msg, isErr){
+      const s = document.getElementById('status');
+      s.innerHTML = msg ? (isErr ? ('<div class="err">'+msg+'</div>') : ('<div class="ok">'+msg+'</div>')) : '';
+    }
+
+    function bitsToBytes(bitstr, padZeros){
+      // удалим все символы кроме 0/1
+      const bits = bitstr.replace(/[^01]/g, '');
+      if(bits.length === 0) return {error: 'Пустая битовая строка'};
+      let lengthBits = bits.length;
+      let padded = bits;
+      if(bits.length % 8 !== 0){
+        if(!padZeros) return {error: 'Длина бит не кратна 8 и опция дополнения отключена.'};
+        const need = 8 - (bits.length % 8);
+        padded = bits + '0'.repeat(need);
+      }
+      const bytes = new Uint8Array(padded.length/8);
+      for(let i=0;i<bytes.length;i++){
+        let byte = 0;
+        for(let b=0;b<8;b++){
+          const bit = padded[i*8 + b] === '1' ? 1 : 0;
+          byte = (byte<<1) | bit; // big-endian inside byte
+        }
+        bytes[i] = byte;
+      }
+      return {bytes, lengthBits, paddedBits: padded};
+    }
+
+    function toHex(buffer){
+      return Array.from(new Uint8Array(buffer)).map(x=>x.toString(16).padStart(2,'0')).join('');
+    }
+
+    function toBinString(buffer){
+      return Array.from(new Uint8Array(buffer)).map(x=>x.toString(2).padStart(8,'0')).join('');
+    }
+
+    async function compute(){
+      const raw = document.getElementById('bits').value;
+      const padZeros = document.getElementById('padZeros').checked;
+
+      const res = bitsToBytes(raw, padZeros);
+      if(res.error){ showStatus(res.error, true); return; }
+
+      showStatus('Пакуем биты в байты — длина (бит): '+res.lengthBits);
+
+      try{
+        const digest = await crypto.subtle.digest('SHA-256', res.bytes.buffer);
+        const hex = toHex(digest);
+        const bin = toBinString(digest);
+        document.getElementById('hexOut').textContent = hex;
+        document.getElementById('binOut').textContent = bin;
+        document.getElementById('packedHex').textContent = toHex(res.bytes.buffer) + '\n\n(длина входа в битах: ' + res.lengthBits + ', байт после упаковки: ' + res.bytes.length + ')';
+        showStatus('Готово. Обрати внимание: если длина бит не кратна 8, последний байт был дополнен нулями (если включено). SHA-256 считается от упакованных байт.');
+      }catch(e){ showStatus('Ошибка при расчёте: '+e, true); }
+    }
+
+    // Привязки событий
+    document.getElementById('calc').addEventListener('click', compute);
+
+    document.getElementById('clear').addEventListener('click', ()=>{
+      document.getElementById('bits').value = '';
+      document.getElementById('hexOut').textContent = '—';
+      document.getElementById('binOut').textContent = '—';
+      document.getElementById('packedHex').textContent = '—';
+      showStatus('');
+    });
+
+    // кнопки копирования
+    function copyText(id){
+      const t = document.getElementById(id).textContent;
+      if(!t || t === '—') return showStatus('Нечего копировать', true);
+      navigator.clipboard.writeText(t).then(()=> showStatus('Скопировано.'), (err)=> showStatus('Ошибка копирования: '+err, true));
+    }
+    document.getElementById('copyHex').addEventListener('click', ()=>copyText('hexOut'));
+    document.getElementById('copyBin').addEventListener('click', ()=>copyText('binOut'));
+    document.getElementById('copyPacked').addEventListener('click', ()=>copyText('packedHex'));
+
+    // небольшая подсказка при фокусе
+    document.getElementById('bits').addEventListener('focus', ()=>{
+      const t = document.getElementById('bits');
+      if(t.value.trim()==='') t.placeholder = 'Например:\n11010000110100110110001101000110...';
+    });
+  </script>
+  
+  	<div id="main-footer"></div>
+	<script src="footer.js"></script>
+  
+</body>
+</html>
