@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' };
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .btn-active:active { transform: scale(0.95); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+		body {
+		font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;margin:24px;background:#f7f8fb;color:#0b1220
+		max-width:800px;
+		margin: 0 auto;
+
+		padding:0;
+		// padding:20px;
+		color:#111;
+		background:#f7f8fb;
+		
+	}
+		
+		
+		        .container {
+            // background: white;
+			background-color: transparent;
+            padding: 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+             width: 100%;
+            max-width: 500px;
+			margin: 0 auto;
+        }
+		
+		
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 min-h-screen flex items-center justify-center p-4 select-none font-sans transition-colors duration-300">
+
+
+
+    <div class="w-full max-w-sm bg-white dark:bg-slate-800/80 rounded-3xl p-5 shadow-2xl border border-slate-200 dark:border-slate-700/50 backdrop-blur-xl relative overflow-hidden transition-colors duration-300">
+	
+<div class="container" id="">        
+		
+        <!-- Верхняя панель -->
+        <div class="flex justify-between items-center mb-4 text-slate-500 dark:text-slate-400 text-sm font-medium">
+            <button onclick="toggleTheme()" class="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Смена темы">
+                <i id="theme-icon" class="fa-solid fa-sun text-amber-500 text-base"></i>
+            </button>
+            <div id="memory-indicator" class="flex items-center gap-1 opacity-0 transition-opacity text-amber-500 font-bold">
+                <i class="fa-solid fa-memory text-xs"></i> <span id="memory-val">M: 0</span>
+            </div>
+        </div>
+
+        <!-- Дисплей -->
+        <div class="bg-slate-50 dark:bg-slate-950/60 rounded-2xl p-4 mb-4 text-right border border-slate-200 dark:border-slate-800 transition-colors duration-300">
+            <div id="expression" class="text-slate-400 dark:text-slate-500 text-sm h-6 overflow-hidden text-ellipsis font-mono mb-1 no-scrollbar">&nbsp;</div>
+            <div id="display" class="text-slate-800 dark:text-white text-4xl font-light font-mono overflow-x-auto whitespace-nowrap no-scrollbar">0</div>
+        </div>
+
+        <!-- Кнопки памяти -->
+        <div class="grid grid-cols-4 gap-2 mb-2 text-xs font-semibold">
+            <button onclick="handleMemory('MC')" class="py-2 rounded-lg bg-slate-200/60 dark:bg-slate-700/40 text-amber-600 dark:text-amber-400 hover:bg-slate-200 dark:hover:bg-slate-700 btn-active transition">MC</button>
+            <button onclick="handleMemory('MR')" class="py-2 rounded-lg bg-slate-200/60 dark:bg-slate-700/40 text-amber-600 dark:text-amber-400 hover:bg-slate-200 dark:hover:bg-slate-700 btn-active transition">MR</button>
+            <button onclick="handleMemory('M+')" class="py-2 rounded-lg bg-slate-200/60 dark:bg-slate-700/40 text-amber-600 dark:text-amber-400 hover:bg-slate-200 dark:hover:bg-slate-700 btn-active transition">M+</button>
+            <button onclick="handleMemory('M-')" class="py-2 rounded-lg bg-slate-200/60 dark:bg-slate-700/40 text-amber-600 dark:text-amber-400 hover:bg-slate-200 dark:hover:bg-slate-700 btn-active transition">M-</button>
+        </div>
+
+        <!-- Клавиатура -->
+        <div class="grid grid-cols-4 gap-3 text-lg font-medium">
+            <button onclick="clearAll()" class="p-4 rounded-2xl bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 dark:hover:bg-rose-500/30 btn-active transition">AC</button>
+            <button onclick="toggleSign()" class="p-4 rounded-2xl bg-slate-200/80 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 btn-active transition">±</button>
+            <button onclick="deleteLast()" class="p-4 rounded-2xl bg-slate-200/80 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 btn-active transition" title="Стереть"><i class="fa-solid fa-backspace"></i></button>
+            <button onclick="appendOperator('/')" class="p-4 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 dark:hover:bg-indigo-500 btn-active transition">÷</button>
+
+            <button onclick="appendNum('7')" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700/60 btn-active transition shadow-sm">7</button>
+            <button onclick="appendNum('8')" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700/60 btn-active transition shadow-sm">8</button>
+            <button onclick="appendNum('9')" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700/60 btn-active transition shadow-sm">9</button>
+            <button onclick="appendOperator('*')" class="p-4 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 dark:hover:bg-indigo-500 btn-active transition">×</button>
+
+            <button onclick="appendNum('4')" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700/60 btn-active transition shadow-sm">4</button>
+            <button onclick="appendNum('5')" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700/60 btn-active transition shadow-sm">5</button>
+            <button onclick="appendNum('6')" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700/60 btn-active transition shadow-sm">6</button>
+            <button onclick="appendOperator('-')" class="p-4 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 dark:hover:bg-indigo-500 btn-active transition">−</button>
+
+            <button onclick="appendNum('1')" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700/60 btn-active transition shadow-sm">1</button>
+            <button onclick="appendNum('2')" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700/60 btn-active transition shadow-sm">2</button>
+            <button onclick="appendNum('3')" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700/60 btn-active transition shadow-sm">3</button>
+            <button onclick="appendOperator('+')" class="p-4 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 dark:hover:bg-indigo-500 btn-active transition">+</button>
+
+            <button onclick="appendOperator('%')" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700/60 btn-active transition shadow-sm">%</button>
+            <button onclick="appendNum('0')" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700/60 btn-active transition shadow-sm">0</button>
+            <button onclick="appendDot()" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700/60 btn-active transition shadow-sm">.</button>
+            <button onclick="calculate()" class="p-4 rounded-2xl bg-emerald-500 text-white hover:bg-emerald-600 btn-active transition font-bold">=</button>
+        </div>
+    </div>
+
+    <script>
+        let currentInput = '0';
+        let previousInput = '';
+        let operation = null;
+        let memoryValue = 0;
+        let isMemorySet = false;
+        let isCalculated = false;
+
+        const display = document.getElementById('display');
+        const expression = document.getElementById('expression');
+        const memoryIndicator = document.getElementById('memory-indicator');
+        const memoryVal = document.getElementById('memory-val');
+        const themeIcon = document.getElementById('theme-icon');
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                themeIcon.className = 'fa-solid fa-moon text-indigo-600 text-base';
+            } else {
+                html.classList.add('dark');
+                themeIcon.className = 'fa-solid fa-sun text-amber-500 text-base';
+            }
+        }
+
+        function updateDisplay() {
+            display.textContent = currentInput;
+            
+            if (isCalculated) {
+                // После '=' не перезаписываем верхнее выражение
+            } else if (operation) {
+                var secondPart = (currentInput !== '0') ? currentInput : '';
+                expression.textContent = previousInput + ' ' + getOpSymbol(operation) + ' ' + secondPart;
+            } else {
+                expression.innerHTML = '&nbsp;';
+            }
+        }
+
+        function getOpSymbol(op) {
+            if (op === '+') return '+';
+            if (op === '-') return '−';
+            if (op === '*') return '×';
+            if (op === '/') return '÷';
+            if (op === '%') return '%';
+            return '';
+        }
+
+        function appendNum(num) {
+            if (isCalculated) {
+                currentInput = num;
+                isCalculated = false;
+            } else if (currentInput === '0' || currentInput === 'Ошибка') {
+                currentInput = num;
+            } else {
+                currentInput = currentInput + num;
+            }
+            updateDisplay();
+        }
+
+        function appendDot() {
+            if (isCalculated) {
+                currentInput = '0.';
+                isCalculated = false;
+            } else if (currentInput.indexOf('.') === -1) {
+                currentInput = currentInput + '.';
+            }
+            updateDisplay();
+        }
+
+        function clearAll() {
+            currentInput = '0';
+            previousInput = '';
+            operation = null;
+            isCalculated = false;
+            updateDisplay();
+        }
+
+        function deleteLast() {
+            if (isCalculated) return;
+            if (currentInput.length > 1) {
+                currentInput = currentInput.slice(0, -1);
+            } else {
+                currentInput = '0';
+            }
+            updateDisplay();
+        }
+
+        function toggleSign() {
+            currentInput = (parseFloat(currentInput) * -1).toString();
+            updateDisplay();
+        }
+
+        function appendOperator(op) {
+            if (operation && !isCalculated && currentInput !== '0') {
+                calculate();
+            }
+            previousInput = currentInput;
+            operation = op;
+            currentInput = '0';
+            isCalculated = false;
+            updateDisplay();
+        }
+
+        function calculate() {
+            if (!operation || !previousInput) return;
+            let result = 0;
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+
+            if (operation === '+') result = prev + current;
+            else if (operation === '-') result = prev - current;
+            else if (operation === '*') result = prev * current;
+            else if (operation === '/') result = (current === 0) ? 'Ошибка' : prev / current;
+            else if (operation === '%') result = (prev * current) / 100;
+
+            expression.textContent = previousInput + ' ' + getOpSymbol(operation) + ' ' + currentInput + ' =';
+            currentInput = result.toString();
+            operation = null;
+            previousInput = '';
+            isCalculated = true;
+            display.textContent = currentInput;
+        }
+
+        function handleMemory(type) {
+            const current = parseFloat(currentInput) || 0;
+
+            if (type === 'MC') {
+                memoryValue = 0;
+                isMemorySet = false;
+            } else if (type === 'MR') {
+                currentInput = memoryValue.toString();
+            } else if (type === 'M+') {
+                memoryValue += current;
+                isMemorySet = true;
+            } else if (type === 'M-') {
+                memoryValue -= current;
+                isMemorySet = true;
+            }
+
+            if (isMemorySet) {
+                memoryIndicator.classList.remove('opacity-0');
+                memoryVal.textContent = 'M: ' + memoryValue;
+            } else {
+                memoryIndicator.classList.add('opacity-0');
+            }
+            updateDisplay();
+        }
+    </script>
+	
+<div id="main-footer" class="width: 100%;"></div>
+<script src="footer.js"></script>
+	</div>
+</body>
+</html>

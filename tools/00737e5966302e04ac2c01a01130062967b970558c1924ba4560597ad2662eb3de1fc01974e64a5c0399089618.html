@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Преобразователь: десятичное → двоичное</title>
+  <style>
+    body {
+	font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;margin:24px;background:#f7f8fb;color:#0b1220
+		max-width:800px;
+		margin:28px auto;
+		padding:0;
+		// padding:20px;
+		color:#111;
+		background:#f7f8fb;
+	}
+    .card{background:#fff;border-radius:12px;box-shadow:0 6px 18px rgba(12,20,40,0.08);padding:20px;max-width:760px;margin:auto}
+    h1{font-size:20px;margin:0 0 12px}
+    label{display:block;margin-top:12px;font-size:14px}
+    input[type=text], select{width:100%;padding:8px 10px;border:1px solid #d8dee9;border-radius:8px;font-size:14px}
+    .row{display:flex;gap:12px}
+    .row > *{flex:1}
+    button{margin-top:12px;padding:10px 14px;border-radius:10px;border:0;background:#0b69ff;color:#fff;font-weight:600;cursor:pointer}
+    pre{background:#0b122011;padding:12px;border-radius:8px;overflow:auto}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .muted{color:#556}
+    .small{font-size:13px}
+    .actions{display:flex;gap:8px;margin-top:12px}
+    .outline{background:transparent;border:1px solid #d8dee9;color:#0b1220}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Преобразователь — десятичное → двоичное</h1>
+    <div class="small muted">Вводите целые десятичные числа (поддерживается очень большая длина через BigInt). Дробные числа не поддерживаются.</div>
+
+    <label for="dec">Десятичное (целое):</label>
+    <input id="dec" type="text" placeholder="Например: 123 или -42" />
+
+    <label class="small">Параметры вывода:</label>
+    <div class="row">
+      <div>
+        <select id="padSelect">
+          <option value="none">Без выравнивания (наиболее короткий вид)</option>
+          <option value="8">8 бит (1 байт)</option>
+          <option value="16">16 бит</option>
+          <option value="32">32 бит</option>
+          <option value="64">64 бит</option>
+          <option value="custom">Пользовательское</option>
+        </select>
+      </div>
+      <div id="customBitsWrap" style="display:none">
+        <input id="customBits" type="text" placeholder="Число бит (например 12)" />
+      </div>
+    </div>
+
+    <div class="controls">
+      <label title="При отрицательных числах и выбранном выравнивании будет показан дополняемый в 2-ой код" class="small">Показывать две’s дополнение для отрицательных чисел?
+        <input id="twos" type="checkbox" style="margin-left:8px;vertical-align:middle" checked />
+      </label>
+    </div>
+
+    <div class="actions">
+      <button id="conv">Преобразовать</button>
+      <button id="clear" class="outline">Очистить</button>
+      <button id="copy" class="outline">Скопировать</button>
+    </div>
+
+    <label style="margin-top:14px">Результат:</label>
+    <pre id="out">—</pre>
+    <div class="small muted">Дополнительно: при выборе выравнивания вы увидите заполнение нулями или два’s код для отрицательных чисел (если включено).</div>
+  </div>
+
+  <script>
+    const dec = document.getElementById('dec');
+    const conv = document.getElementById('conv');
+    const out = document.getElementById('out');
+    const padSelect = document.getElementById('padSelect');
+    const customBitsWrap = document.getElementById('customBitsWrap');
+    const customBits = document.getElementById('customBits');
+    const twos = document.getElementById('twos');
+    const clear = document.getElementById('clear');
+    const copy = document.getElementById('copy');
+
+    padSelect.addEventListener('change', ()=>{
+      customBitsWrap.style.display = padSelect.value === 'custom' ? 'block' : 'none';
+    });
+
+    function isIntegerString(s){
+      return /^-?\d+$/.test(s.trim());
+    }
+
+    function toBinaryString(valueBigInt, bits, useTwos){
+      // valueBigInt is a BigInt (may be negative)
+      if(bits === null){
+        // no padding: show sign for negative
+        if(valueBigInt < 0n) return '-' + ((-valueBigInt).toString(2));
+        return valueBigInt.toString(2);
+      }
+
+      if(bits <= 0) throw new Error('Количество бит должно быть положительным');
+      const B = BigInt(bits);
+
+      if(valueBigInt >= 0n){
+        let s = valueBigInt.toString(2);
+        if(s.length > bits) return "Ошибка: число не умещается в " + bits + " бит";
+        return s.padStart(bits, '0');
+      } else {
+        if(!useTwos) {
+          // show '-' + padded abs
+          let abs = (-valueBigInt).toString(2);
+          if(abs.length > bits) return "Ошибка: число не умещается в " + bits + " бит";
+          return '-' + abs.padStart(bits, '0');
+        }
+        // two's complement: (value mod 2^bits)
+        const mask = (1n << B) - 1n;
+        const v = (valueBigInt & mask) ; // works for negative BigInt
+        let s = v.toString(2).padStart(bits, '0');
+        if(s.length > bits) s = s.slice(-bits);
+        return s;
+      }
+    }
+
+    conv.addEventListener('click', ()=>{
+      const val = dec.value.trim();
+      if(val === ''){ out.textContent = 'Введите число.'; return; }
+      if(!isIntegerString(val)) { out.textContent = 'Ошибка: введите целое число (без десятичной точки).'; return; }
+
+      let bits = null;
+      if(padSelect.value === '8') bits = 8;
+      if(padSelect.value === '16') bits = 16;
+      if(padSelect.value === '32') bits = 32;
+      if(padSelect.value === '64') bits = 64;
+      if(padSelect.value === 'custom'){
+        const cb = customBits.value.trim();
+        if(!/^\d+$/.test(cb) || cb === '' ){ out.textContent = 'Ошибка: укажите корректное число бит.'; return; }
+        bits = Number(cb);
+        if(bits <= 0 || bits > 10240){ out.textContent = 'Ошибка: число бит должно быть в диапазоне 1..10240.'; return; }
+      }
+
+      try{
+        const n = BigInt(val);
+        const res = toBinaryString(n, bits, twos.checked);
+        out.textContent = res;
+      }catch(e){
+        out.textContent = 'Ошибка: ' + (e && e.message ? e.message : String(e));
+      }
+    });
+
+    clear.addEventListener('click', ()=>{ dec.value=''; out.textContent='—'; customBits.value=''; padSelect.value='none'; customBitsWrap.style.display='none'; });
+
+    copy.addEventListener('click', async ()=>{
+      try{
+        await navigator.clipboard.writeText(out.textContent);
+        copy.textContent = 'Скопировано!';
+        setTimeout(()=>copy.textContent='Скопировать',900);
+      }catch(e){
+        copy.textContent = 'Ошибка копирования';
+        setTimeout(()=>copy.textContent='Скопировать',900);
+      }
+    });
+
+    // quick convert on Enter
+    dec.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') conv.click(); });
+  </script>
+  
+    <div id="main-footer" class="width: 100%;"></div>
+	<script src="footer.js"></script>
+  
+</body>
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Счетчик символов и текстовый инструмент</title>
+	
+	
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23ffffff'/><text x='50%' y='48%' dominant-baseline='central' text-anchor='middle' font-size='110' font-family='sans-serif' font-weight='bold' fill='%239c27b0'>t</text></svg>">
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #1a1a1a; 
+            color: #e0e0e0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 5px; 
+            margin: 0;
+        }
+        .container { 
+            width: 100%; 
+            max-width: 800px; 
+            background: #2d2d2d; 
+            padding: 25px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            box-sizing: border-box;
+        }
+        h2 { 
+            color: #9c27b0; 
+            text-align: center; 
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        label { 
+            display: block; 
+            margin-bottom: 10px; 
+            font-weight: bold; 
+            color: #aaa; 
+        }
+        textarea { 
+            width: 100%; 
+            background: #3d3d3d; 
+            color: #fff; 
+            border: 1px solid #444; 
+            border-radius: 6px; 
+            padding: 12px; 
+            box-sizing: border-box; 
+            font-size: 16px; 
+            resize: vertical;
+            font-family: monospace;
+            margin-bottom: 20px;
+        }
+        textarea:focus { 
+            border-color: #9c27b0; 
+            outline: none; 
+        }
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button { 
+            padding: 10px 15px; 
+            cursor: pointer; 
+            border: none; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            background: #333; 
+            color: #e0e0e0; 
+            border: 1px solid #555;
+            transition: 0.2s; 
+            font-size: 14px;
+        }
+        button:hover { 
+            background: #444; 
+            border-color: #9c27b0;
+        }
+        button.action-btn {
+            background: #9c27b0;
+            color: white;
+            border: none;
+        }
+        button.action-btn:hover {
+            background: #7b1fa2;
+        }
+        button.reset-btn {
+            background: #d32f2f;
+            color: white;
+            border: none;
+        }
+        button.reset-btn:hover {
+            background: #b71c1c;
+        }
+        .stats-panel { 
+            background: #222; 
+            padding: 15px; 
+            border-radius: 6px; 
+            border: 1px solid #111;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 22px;
+            font-weight: bold;
+            color: #e1bee7;
+            font-family: 'Courier New', monospace;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+		
+		@media (max-width: 480px) {
+		.container { padding: 15px; }
+		.options-grid { grid-template-columns: 1fr; 
+		}
+	}
+		
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Счетчик символов</h2>
+
+    <!-- <label for="textInput">Введите или вставьте текст:</label> -->
+    <textarea id="textInput" cols="80" rows="20" placeholder="Начните вводить текст..." oninput="countChars()"></textarea>
+
+    <!-- Кнопки управления -->
+    <div class="btn-grid">
+        <button class="action-btn" onclick="countChars()">Сосчитать символы</button>
+        <button onclick="toUpper()">В верхний регистр</button>
+        <button onclick="toLower()">В нижний регистр</button>
+        <button onclick="toLatin()">В латиницу</button>
+        <button onclick="toCyrillic()">В кириллицу</button>
+        <button class="reset-btn" onclick="clearText()">Очистить содержимое</button>
+    </div>
+
+    <!-- Результат подсчета -->
+    <div class="stats-panel">
+        <div class="stat-item">
+            <div id="countWithSpaces" class="stat-value">0</div>
+            <div class="stat-label">Символов (с пробелами)</div>
+        </div>
+        <div class="stat-item">
+            <div id="countNoSpaces" class="stat-value">0</div>
+            <div class="stat-label">Символов (без пробелов)</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Подсчет символов
+    function countChars() {
+        const text = document.getElementById('textInput').value;
+        
+        // Всего символов (с пробелами и переносами)
+        const withSpaces = text.length;
+        
+        // Без пробелов, табов и переносов строк
+        const noSpaces = text.replace(/\s/g, '').length;
+
+        document.getElementById('countWithSpaces').innerText = withSpaces;
+        document.getElementById('countNoSpaces').innerText = noSpaces;
+    }
+
+    // Верхний регистр
+    function toUpper() {
+        const area = document.getElementById('textInput');
+        area.value = area.value.toUpperCase();
+        countChars();
+    }
+
+    // Нижний регистр
+    function toLower() {
+        const area = document.getElementById('textInput');
+        area.value = area.value.toLowerCase();
+        countChars();
+    }
+
+    // Карта для транслитерации
+    const cyrToLatMap = {
+        'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh',
+        'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o',
+        'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts',
+        'ч': 'ch', 'ш': 'sh', 'щ': 'shch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
+        'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Ё': 'Yo', 'Ж': 'Zh',
+        'З': 'Z', 'И': 'I', 'Й': 'Y', 'К': 'K', 'Л': 'L', 'М': 'M', 'Н': 'N', 'О': 'O',
+        'П': 'P', 'Р': 'R', 'С': 'S', 'Т': 'T', 'У': 'U', 'Ф': 'F', 'Х': 'Kh', 'Ц': 'Ts',
+        'Ч': 'Ch', 'Ш': 'Sh', 'Щ': 'Shch', 'Ъ': '', 'Ы': 'Y', 'Ь': '', 'Э': 'E', 'Ю': 'Yu', 'Я': 'Ya'
+    };
+
+    // Составляем обратную карту для перевода из латиницы в кириллицу
+    const latToCyrRules = [
+        { lat: 'shch', cyr: 'щ' }, { lat: 'Shch', cyr: 'Щ' }, { lat: 'SHCH', cyr: 'Щ' },
+        { lat: 'yo', cyr: 'ё' }, { lat: 'Yo', cyr: 'Ё' }, { lat: 'YO', cyr: 'Ё' },
+        { lat: 'zh', cyr: 'ж' }, { lat: 'Zh', cyr: 'Ж' }, { lat: 'ZH', cyr: 'Ж' },
+        { lat: 'kh', cyr: 'х' }, { lat: 'Kh', cyr: 'Х' }, { lat: 'KH', cyr: 'Х' },
+        { lat: 'ts', cyr: 'ц' }, { lat: 'Ts', cyr: 'Ц' }, { lat: 'TS', cyr: 'Ц' },
+        { lat: 'ch', cyr: 'ч' }, { lat: 'Ch', cyr: 'Ч' }, { lat: 'CH', cyr: 'Ч' },
+        { lat: 'sh', cyr: 'ш' }, { lat: 'Sh', cyr: 'Ш' }, { lat: 'SH', cyr: 'Ш' },
+        { lat: 'yu', cyr: 'ю' }, { lat: 'Yu', cyr: 'Ю' }, { lat: 'YU', cyr: 'Ю' },
+        { lat: 'ya', cyr: 'я' }, { lat: 'Ya', cyr: 'Я' }, { lat: 'YA', cyr: 'Я' },
+        { lat: 'a', cyr: 'а' }, { lat: 'b', cyr: 'б' }, { lat: 'v', cyr: 'в' }, { lat: 'g', cyr: 'г' },
+        { lat: 'd', cyr: 'д' }, { lat: 'e', cyr: 'е' }, { lat: 'z', cyr: 'з' }, { lat: 'i', cyr: 'и' },
+        { lat: 'y', cyr: 'й' }, { lat: 'k', cyr: 'к' }, { lat: 'l', cyr: 'л' }, { lat: 'm', cyr: 'м' },
+        { lat: 'n', cyr: 'н' }, { lat: 'o', cyr: 'о' }, { lat: 'p', cyr: 'п' }, { lat: 'r', cyr: 'р' },
+        { lat: 's', cyr: 'с' }, { lat: 't', cyr: 'т' }, { lat: 'u', cyr: 'у' }, { lat: 'f', cyr: 'ф' },
+        { lat: 'A', cyr: 'А' }, { lat: 'B', cyr: 'Б' }, { lat: 'V', cyr: 'В' }, { lat: 'G', cyr: 'Г' },
+        { lat: 'D', cyr: 'Д' }, { lat: 'E', cyr: 'Е' }, { lat: 'Z', cyr: 'З' }, { lat: 'I', cyr: 'И' },
+        { lat: 'Y', cyr: 'Й' }, { lat: 'K', cyr: 'К' }, { lat: 'L', cyr: 'Л' }, { lat: 'M', cyr: 'М' },
+        { lat: 'N', cyr: 'Н' }, { lat: 'O', cyr: 'О' }, { lat: 'P', cyr: 'П' }, { lat: 'R', cyr: 'Р' },
+        { lat: 'S', cyr: 'С' }, { lat: 'T', cyr: 'Т' }, { lat: 'U', cyr: 'У' }, { lat: 'F', cyr: 'Ф' }
+    ];
+
+    // В латиницу
+    function toLatin() {
+        const area = document.getElementById('textInput');
+        let text = area.value;
+        let result = '';
+        for (let char of text) {
+            result += cyrToLatMap[char] !== undefined ? cyrToLatMap[char] : char;
+        }
+        area.value = result;
+        countChars();
+    }
+
+    // В кириллицу
+    function toCyrillic() {
+        const area = document.getElementById('textInput');
+        let text = area.value;
+
+        // Заменяем сначала сложные сочетания (shch, zh...), а затем одиночные буквы
+        latToCyrRules.forEach(rule => {
+            const regex = new RegExp(rule.lat, 'g');
+            text = text.replace(regex, rule.cyr);
+        });
+
+        area.value = text;
+        countChars();
+    }
+
+    // Очистка
+    function clearText() {
+        document.getElementById('textInput').value = '';
+        countChars();
+    }
+	const stsh_release = "5FB15956B74F38548114673E6120F36B553E12E5505F86B63FA2D11C93BC6445BE3A53A92DA1C32FA65A5C43F0";
+</script>
+
+<div id="main-footer" class="width: 100%;"></div>
+<script src="footer.js"></script>
+
+</body>
+</html>

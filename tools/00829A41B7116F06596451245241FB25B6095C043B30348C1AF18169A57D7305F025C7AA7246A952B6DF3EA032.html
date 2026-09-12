@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Генератор случайного бинарного числа</title>
+  <style>
+    :root{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;}
+    
+	body {
+		max-width:800px;
+		margin:28px auto;
+		padding:0;
+		// padding:20px;
+		color:#111;
+		background:#f7f8fb;
+	}
+    h1{font-size:20px;margin:0 0 12px}
+    .card{background:#fff;padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(20,30,60,0.06)}
+    label{display:block;margin:10px 0 6px;font-size:13px}
+    input[type=number], input[type=range], select, textarea{width:100%;box-sizing:border-box;padding:8px;border:1px solid #d7dbe6;border-radius:8px;font-size:13px}
+    .row{display:flex;gap:10px}
+    .row .col{flex:1}
+    button{padding:10px 14px;border-radius:8px;border:0;background:#0b63d6;color:white;cursor:pointer;font-weight:600}
+    button.secondary{background:#eef2ff;color:#0b63d6}
+    .small{font-size:12px;color:#444}
+    textarea{height:220px;font-family:monospace;white-space:pre-wrap;overflow:auto}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .note{font-size:12px;color:#666;margin-top:8px}
+    .danger{color:#b02a37}
+    .inline{display:inline-block;vertical-align:middle;margin-left:8px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Генератор случайного бинарного числа (бит)</h1>
+    <div class="small">Генерирует случайную бинарную строку длиной N бит, минимум по умолчанию 256 бит. Использует Web Crypto API (криптографически стойкий источник случайности).</div>
+
+    <label for="bits">Длина (бит)</label>
+    <div class="row">
+      <div class="col">
+        <input id="bits" type="number" min="1" max="1000000" value="256" />
+      </div>
+      <div style="width:220px">
+        <input id="bitsRange" type="range" min="1" max="4096" value="256" />
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+      <input id="enforceMin" type="checkbox" checked />
+      <label for="enforceMin" class="small inline">Принудительный минимум 256 бит (снять галочку, чтобы разрешить меньше)</label>
+    </div>
+
+    <label>Опции отображения</label>
+    <div class="row">
+      <div class="col">
+        <select id="groupBy">
+          <option value="0">Без группировки</option>
+          <option value="4">Группировать по 4 бита</option>
+          <option value="8" selected>Группировать по 8 бит (байт)</option>
+        </select>
+      </div>
+      <div style="width:140px">
+        <select id="sep">
+          <option value=" ">Пробел</option>
+          <option value=",">Запятая</option>
+          <option value="">Без разделителя</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="gen">Сгенерировать</button>
+      <button id="copy" class="secondary">Скопировать</button>
+      <button id="download" class="secondary">Скачать .txt</button>
+      <button id="hex" class="secondary">Показать в HEX</button>
+    </div>
+
+    <div class="note">Максимум по умолчанию для ползунка — 4096 бит. Поле ввода допускает до 1&nbsp;000&nbsp;000 бит, но при очень больших значениях браузер может занять заметное время и память.</div>
+    <div class="note danger">Если включён "Принудительный минимум 256 бит", значения &lt; 256 будут автоматически увеличены до 256.</div>
+
+    <label for="out">Результат (бинарная строка)</label>
+    <textarea id="out" readonly></textarea>
+
+    <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
+      <div class="small">Сгенерировано: <span id="count">0</span></div>
+      <div class="small">Размер (бит): <span id="lastBits">0</span></div>
+    </div>
+  </div>
+
+  <script>
+    const bitsInput = document.getElementById('bits');
+    const bitsRange = document.getElementById('bitsRange');
+    const enforceMin = document.getElementById('enforceMin');
+    const out = document.getElementById('out');
+    const genBtn = document.getElementById('gen');
+    const copyBtn = document.getElementById('copy');
+    const downloadBtn = document.getElementById('download');
+    const hexBtn = document.getElementById('hex');
+    const countEl = document.getElementById('count');
+    const lastBitsEl = document.getElementById('lastBits');
+    const groupBy = document.getElementById('groupBy');
+    const sep = document.getElementById('sep');
+
+    let count = 0;
+
+    // keep range and number in sync
+    bitsInput.addEventListener('input', () => {
+      let v = Number(bitsInput.value) || 0;
+      if (enforceMin.checked && v > 0 && v < 256) v = 256;
+      if (v > 1000000) v = 1000000;
+      bitsInput.value = v;
+      if (v <= 4096) bitsRange.value = v;
+    });
+    bitsRange.addEventListener('input', () => {
+      bitsInput.value = bitsRange.value;
+    });
+    enforceMin.addEventListener('change', () => {
+      let v = Number(bitsInput.value) || 0;
+      if (enforceMin.checked && v > 0 && v < 256) bitsInput.value = 256;
+    });
+
+    function generateBits(nBits) {
+      // nBits: integer >= 1
+      const nBytes = Math.ceil(nBits / 8);
+      // limit allocation size to prevent accidental OOM
+      if (nBytes > 5_000_000) throw new Error('Слишком большой запрос (попробуйте меньше бит)');
+      const bytes = new Uint8Array(nBytes);
+      crypto.getRandomValues(bytes);
+      // convert bytes to a binary string
+      // build with array join for performance
+      const parts = new Array(nBytes);
+      for (let i = 0; i < nBytes; i++) {
+        let s = bytes[i].toString(2).padStart(8, '0');
+        parts[i] = s;
+      }
+      let combined = parts.join('');
+      // cut to exact bits
+      return combined.slice(0, nBits);
+    }
+
+    function formatBits(bitStr) {
+      const g = Number(groupBy.value);
+      const s = sep.value;
+      if (!g) return bitStr;
+      const outParts = [];
+      for (let i = 0; i < bitStr.length; i += g) {
+        outParts.push(bitStr.slice(i, i + g));
+      }
+      return outParts.join(s);
+    }
+
+    genBtn.addEventListener('click', () => {
+      try {
+        let n = Math.floor(Number(bitsInput.value) || 0);
+        if (n < 1) n = 1;
+        if (enforceMin.checked && n < 256) n = 256;
+        if (n > 1_000_000) {
+          if (!confirm('Вы запросили более 1 000 000 бит. Это может занять время и память. Продолжить?')) return;
+        }
+        const bits = generateBits(n);
+        out.value = formatBits(bits);
+        count += 1;
+        countEl.textContent = count;
+        lastBitsEl.textContent = bits.length;
+      } catch (e) {
+        alert('Ошибка: ' + (e && e.message ? e.message : e));
+      }
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(out.value);
+        copyBtn.textContent = 'Скопировано!';
+        setTimeout(()=> copyBtn.textContent = 'Скопировать', 1200);
+      } catch (e) {
+        alert('Не удалось скопировать: ' + e);
+      }
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      const filename = 'random_binary_' + (new Date()).toISOString().replace(/[:.]/g,'-') + '.txt';
+      const blob = new Blob([out.value || ''], {type:'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    hexBtn.addEventListener('click', () => {
+      const bits = (out.value || '').replace(/\s+/g,'');
+      if (!bits) { alert('Сначала сгенерируйте строку.'); return; }
+      // pad to full byte
+      const pad = (8 - (bits.length % 8)) % 8;
+      const padded = bits + '0'.repeat(pad);
+      let hex = '';
+      for (let i = 0; i < padded.length; i += 8) {
+        const byte = padded.slice(i, i+8);
+        const val = parseInt(byte, 2);
+        hex += val.toString(16).padStart(2, '0');
+      }
+      // show in a prompt (or replace textarea)
+      const w = window.open('', '_blank');
+      w.document.title = 'HEX';
+      const pre = w.document.createElement('pre');
+      pre.textContent = hex;
+      w.document.body.appendChild(pre);
+    });
+
+    // initialise
+    bitsInput.dispatchEvent(new Event('input'));
+  </script>
+  
+  <div id="main-footer" class="width: 100%;"></div>
+<script src="footer.js"></script>
+  
+</body>
+</html>
