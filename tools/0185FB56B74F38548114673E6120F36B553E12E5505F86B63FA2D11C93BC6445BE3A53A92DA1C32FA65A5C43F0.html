@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Секундомер</title>
+<style>
+  :root{
+    --bg: #0e1013;
+    --panel: #16191d;
+    --text: #eceff1;
+    --muted: #7a8288;
+    --accent: #4fd1a5;
+    --accent-dim: #2b6b53;
+    --stop: #e0655f;
+    --stop-dim: #7a3532;
+    --divider: #262a2f;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 28px;
+  }
+
+  .display {
+    text-align: center;
+    padding: 10px 0 0;
+  }
+
+  .time {
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+    font-weight: 600;
+    font-size: clamp(48px, 15vw, 78px);
+    letter-spacing: -1px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: baseline;
+    color: var(--text);
+  }
+
+  .time .ms {
+    font-size: 0.42em;
+    color: var(--muted);
+    margin-left: 4px;
+    min-width: 2.4ch;
+    display: inline-block;
+    text-align: left;
+  }
+
+  .total {
+    margin-top: 8px;
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+    font-size: 14px;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+  }
+
+  .status {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+    height: 16px;
+  }
+
+  .status.running { color: var(--accent); }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  button {
+    font: inherit;
+    border: none;
+    border-radius: 14px;
+    padding: 18px 0;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text);
+    background: var(--panel);
+    transition: transform 0.08s ease, background 0.15s ease;
+  }
+
+  button:active {
+    transform: scale(0.97);
+  }
+
+  #startStop {
+    background: var(--accent-dim);
+    color: #d6ffef;
+  }
+
+  #startStop.running {
+    background: var(--stop-dim);
+    color: #ffe1de;
+  }
+
+  #lap:disabled, #reset:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  #lap:disabled:active, #reset:disabled:active {
+    transform: none;
+  }
+
+  .laps {
+    border-top: 1px solid var(--divider);
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+
+  .laps ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .laps li {
+    display: flex;
+    justify-content: space-between;
+    padding: 13px 4px;
+    border-bottom: 1px solid var(--divider);
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+    font-size: 15px;
+  }
+
+  .laps li:last-child { border-bottom: none; }
+
+  .laps li .n {
+    color: var(--muted);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+  }
+
+  .laps li.best .t { color: var(--accent); }
+  .laps li.worst .t { color: var(--stop); }
+
+  .laps::-webkit-scrollbar { width: 6px; }
+  .laps::-webkit-scrollbar-thumb { background: var(--divider); border-radius: 3px; }
+
+  .empty-hint {
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+    padding: 20px 0 4px;
+  }
+
+  @media (max-width: 360px) {
+    .time { font-size: 44px; }
+    button { padding: 16px 0; font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="app">
+    <div class="display">
+      <div class="time" id="time">00:00<span class="ms">.00</span></div>
+      <div class="total" id="total">00:00.00</div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="controls">
+      <button id="lap" disabled>Круг</button>
+      <button id="startStop">Старт</button>
+      <button id="reset" disabled>Сброс</button>
+    </div>
+
+    <div class="laps" id="lapsWrap" hidden>
+      <ol id="lapsList"></ol>
+    </div>
+    <div class="empty-hint" id="emptyHint">Круги появятся здесь</div>
+  </div>
+
+<script>
+(function () {
+  var timeEl = document.getElementById('time');
+  var totalEl = document.getElementById('total');
+  var statusEl = document.getElementById('status');
+  var startStopBtn = document.getElementById('startStop');
+  var lapBtn = document.getElementById('lap');
+  var resetBtn = document.getElementById('reset');
+  var lapsList = document.getElementById('lapsList');
+  var lapsWrap = document.getElementById('lapsWrap');
+  var emptyHint = document.getElementById('emptyHint');
+
+  var running = false;
+  var startTimestamp = 0;
+  var elapsedBeforePause = 0;
+  var rafId = null;
+  var laps = [];
+  var lastLapTime = 0;
+
+  function formatTime(ms) {
+    var totalMs = Math.max(0, Math.floor(ms));
+    var minutes = Math.floor(totalMs / 60000);
+    var seconds = Math.floor((totalMs % 60000) / 1000);
+    var hundredths = Math.floor((totalMs % 1000) / 10);
+
+    var mm = String(minutes).padStart(2, '0');
+    var ss = String(seconds).padStart(2, '0');
+    var cc = String(hundredths).padStart(2, '0');
+
+    return { main: mm + ':' + ss, ms: '.' + cc };
+  }
+
+  function render(ms) {
+    var f = formatTime(ms);
+    timeEl.innerHTML = f.main + '<span class="ms">' + f.ms + '</span>';
+  }
+
+  function renderTotal(ms) {
+    var f = formatTime(ms);
+    totalEl.textContent = f.main + f.ms;
+  }
+
+  function currentElapsed() {
+    if (running) {
+      return elapsedBeforePause + (performance.now() - startTimestamp);
+    }
+    return elapsedBeforePause;
+  }
+
+  function tick() {
+    var total = currentElapsed();
+    render(total - lastLapTime);
+    renderTotal(total);
+    if (running) {
+      rafId = requestAnimationFrame(tick);
+    }
+  }
+
+  function start() {
+    running = true;
+    startTimestamp = performance.now();
+    startStopBtn.textContent = 'Стоп';
+    startStopBtn.classList.add('running');
+    statusEl.textContent = 'идёт отсчёт';
+    statusEl.classList.add('running');
+    lapBtn.disabled = false;
+    resetBtn.disabled = true;
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function stop() {
+    elapsedBeforePause = currentElapsed();
+    running = false;
+    cancelAnimationFrame(rafId);
+    startStopBtn.textContent = 'Старт';
+    startStopBtn.classList.remove('running');
+    statusEl.textContent = laps.length ? 'на паузе' : '';
+    statusEl.classList.remove('running');
+    lapBtn.disabled = true;
+    resetBtn.disabled = false;
+    render(elapsedBeforePause - lastLapTime);
+    renderTotal(elapsedBeforePause);
+  }
+
+  function reset() {
+    running = false;
+    elapsedBeforePause = 0;
+    lastLapTime = 0;
+    laps = [];
+    cancelAnimationFrame(rafId);
+    render(0);
+    renderTotal(0);
+    statusEl.textContent = '';
+    statusEl.classList.remove('running');
+    startStopBtn.textContent = 'Старт';
+    startStopBtn.classList.remove('running');
+    lapBtn.disabled = true;
+    resetBtn.disabled = true;
+    lapsList.innerHTML = '';
+    lapsWrap.hidden = true;
+    emptyHint.hidden = false;
+  }
+
+  function addLap() {
+    var now = currentElapsed();
+    var split = now - lastLapTime;
+    lastLapTime = now;
+    laps.push({ total: now, split: split });
+
+    emptyHint.hidden = true;
+    lapsWrap.hidden = false;
+
+    renderLaps();
+  }
+
+  function renderLaps() {
+    lapsList.innerHTML = '';
+
+    var splits = laps.map(function (l) { return l.split; });
+    var minSplit = Math.min.apply(null, splits);
+    var maxSplit = Math.max.apply(null, splits);
+    var hasRange = laps.length > 1 && minSplit !== maxSplit;
+
+    for (var i = laps.length - 1; i >= 0; i--) {
+      var lap = laps[i];
+      var li = document.createElement('li');
+
+      if (hasRange && lap.split === minSplit) li.classList.add('best');
+      if (hasRange && lap.split === maxSplit) li.classList.add('worst');
+
+      var n = document.createElement('span');
+      n.className = 'n';
+      n.textContent = 'Круг ' + (i + 1);
+
+      var t = document.createElement('span');
+      t.className = 't';
+      var f = formatTime(lap.split);
+      t.textContent = f.main + f.ms;
+
+      li.appendChild(n);
+      li.appendChild(t);
+      lapsList.appendChild(li);
+    }
+  }
+
+  startStopBtn.addEventListener('click', function () {
+    if (running) {
+      stop();
+    } else {
+      start();
+    }
+  });
+
+  lapBtn.addEventListener('click', function () {
+    if (running) addLap();
+  });
+
+  resetBtn.addEventListener('click', function () {
+    if (!running) reset();
+  });
+
+  render(0);
+  renderTotal(0);
+})();
+</script>
+
+</body>
+</html>
